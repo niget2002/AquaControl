@@ -72,8 +72,8 @@ def sendToServer(pump0,pump1,pump2,pump3,heater,chiller,co2,om,temperature,ph0,p
 
 	dataCSV = pump0+","+pump1+","+pump2+","+pump3+","+heater+","+chiller+","+co2+","+om+","+temperature+","+ph0+","+ph1+","+sw0+","+sw1+","+sw2+","+sw3+","+sw4
 
-	url = 'http://reeflog.wallings.net/insertdata.php'
-	payload = {'blogin': 'piapp', 'passin': '2n%vH6oIceHkCIqe%', 'stringdata': dataCSV}
+	url = 'http://<create a webpage to upload content>'
+	payload = {'blogin': '<login>', 'passin': '<password>', 'stringdata': dataCSV}
 
 	# POST with form-encoded data
 	try:
