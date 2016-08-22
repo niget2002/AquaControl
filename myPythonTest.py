@@ -72,8 +72,10 @@ def sendToServer(pump0,pump1,pump2,pump3,heater,chiller,co2,om,temperature,ph0,p
 
 	dataCSV = pump0+","+pump1+","+pump2+","+pump3+","+heater+","+chiller+","+co2+","+om+","+temperature+","+ph0+","+ph1+","+sw0+","+sw1+","+sw2+","+sw3+","+sw4
 
-	url = 'http://<create a webpage to upload content>'
-	payload = {'blogin': '<login>', 'passin': '<password>', 'stringdata': dataCSV}
+	url = ConfigSectionMap("website")["url"]
+	blogin = ConfigSectionMap("website")["blogin"]
+	passin = ConfigSectionMap("website")["passin"]
+	payload = {'blogin': blogin, 'passin': passin, 'stringdata': dataCSV}
 
 	# POST with form-encoded data
 	try:
@@ -328,7 +330,7 @@ class MyWidget(BoxLayout,Widget):
 					self.labels[4].text=self.labels[4].text+"[color=3333ff]"+str(i)+"[/color]"
 
 		self.sendVals = self.sendVals+1
-		if self.sendVals == 30 :
+		if self.sendVals == 3 :
 			self.sendVals=0
 			sendToServer(str(self.pump[0]),str(self.pump[1]),str(self.pump[2]),str(self.pump[3]),str(self.other[0]),str(self.other[1]),str(self.other[2]),str(self.other[3]),self.labels[3].text,self.labels[1].text,self.labels[2].text,str(self.alarms[0]),str(self.alarms[1]),str(self.alarms[2]),str(self.alarms[3]),'0')
 

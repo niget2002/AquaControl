@@ -24,3 +24,7 @@ othername3: "OM"
 [ph]
 phoffset0 = 000
 phoffset1 = 000
+[website]
+blogin = <websiteLogin>
+passin = <websitePassword> 
+url = <websiteURL>
