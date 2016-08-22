@@ -19,8 +19,8 @@
 #define floatStart 15
 
 // Tank  Range
-#define tankTempLow 25  //in Celsius
-#define tankTempHigh  28  //in Celsius
+#define tankTempLow 25  //in Celsius 77F
+#define tankTempHigh  28  //in Celsius 82.4F 
 #define tankPhLow 7.8
 #define tankPhHigh 8.2  //not actually used
 #define caPhLow 6.5
