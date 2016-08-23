@@ -19,3 +19,7 @@ a 3.2" touchscreen boght from banggood.
 
 https://drive.google.com/open?id=0B168py-wpZVeQkdhazNpV1p0VE0
 
+Please note that the arduino code is configured to be compiled with PlatformIO on the PI itself.
+This makes making changes to Arduino code and uploading very easy.
+
+http://www.russelldavis.org/2015/08/01/platformio-on-the-raspberry-pi/
