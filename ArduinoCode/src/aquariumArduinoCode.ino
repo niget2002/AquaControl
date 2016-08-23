@@ -20,7 +20,7 @@
 
 // Tank  Range
 #define tankTempLow 25  //in Celsius 77F
-#define tankTempHigh  28  //in Celsius 82.4F 
+#define tankTempHigh  28  //in Celsius 82.4F
 #define tankPhLow 7.8
 #define tankPhHigh 8.2  //not actually used
 #define caPhLow 6.5
@@ -188,12 +188,27 @@ void analogTemp(void) {
 }
 
 void analogCheck(void) {
+  // We Want to keep the Tank temperature between two points using both
+  // a heater and a chiller. To help reduce cycling heaters/chillers on/off
+  // we will do the following:
+  //
+  // In the event the temperature gets too low, turn on a heater
+  // wait until the temperature is 1 degree hotter than the low point to turn
+  // the heater back off
+  //
+  // If the tank gets too hot, turn on the chiller. Wait until the temperature
+  // is 1 degree colder than the hot temperature to turn chiller back off
+  //
   // Turn Heater ON / OFF
   if ( tankTempLow > analogs[2] ) {
     ledMatrix_ON(myOther[0]);
   }
   else {
-    ledMatrix_OFF(myOther[0]);
+    if(digitalRead(myOther[0])){
+      if( tankTempLow+1 > analogs[2]){
+        ledMatrix_OFF(myOther[0]);
+      }
+    }
   }
 
   // Turn Chiller ON/ OFF
@@ -201,9 +216,15 @@ void analogCheck(void) {
     ledMatrix_ON(myOther[1]);
   }
   else {
-    ledMatrix_OFF(myOther[1]);
+    if(digitalRead(myOther[1])){
+      if( tankTempLow+1 < analogs[2]){
+        ledMatrix_OFF(myOther[1]);
+      }
+    }
   }
 
+  // The Reaction to CO2 changes is so slow, there's no need to debounce using
+  // the above algorithm like for temperature.
   // Turn CO2 ON/ OFF
   if ( tankPhLow > analogs[0] || caPhLow > analogs[1]) {
     ledMatrix_OFF(myOther[2]);
@@ -399,6 +420,3 @@ void timerSetup(void) {
   sei();
 
 }
-
-
-
