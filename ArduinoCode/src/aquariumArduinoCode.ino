@@ -12,8 +12,8 @@
 #define startPin 2
 
 //Analogs
-#define PH0 A0
-#define PH1 A1
+#define MPH0 A0
+#define MPH1 A1
 
 //Floats
 #define floatStart 15
@@ -163,8 +163,8 @@ void alarmCheck( void ) {
 void analogGet(void) {
 
   analogsTrigger++;
-  analogsPin[0] += analogRead(PH0) * (5.0 / 1024);
-  analogsPin[1] += analogRead(PH1) * (5.0 / 1024);
+  analogsPin[0] += analogRead(MPH0) * (5.0 / 1024);
+  analogsPin[1] += analogRead(MPH1) * (5.0 / 1024);
 
   if (analogsTrigger == 100) {
     analogs[0] = 3.5 * ((analogsPin[0] / 100)) + phOffset[0];
@@ -205,7 +205,7 @@ void analogCheck(void) {
   }
   else {
     if(digitalRead(myOther[0])){
-      if( tankTempLow+1 > analogs[2]){
+      if( tankTempLow+1 < analogs[2]){
         ledMatrix_OFF(myOther[0]);
       }
     }
@@ -217,7 +217,7 @@ void analogCheck(void) {
   }
   else {
     if(digitalRead(myOther[1])){
-      if( tankTempLow+1 < analogs[2]){
+      if( tankTempHigh-1 > analogs[2]){
         ledMatrix_OFF(myOther[1]);
       }
     }
