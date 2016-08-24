@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from __future__ import division
+import logging
 import subprocess
 from subprocess import PIPE, Popen, call
 import re
@@ -31,6 +32,19 @@ numLights=2
 numPumps=4
 numOther=4
 numAlarms=4
+mylogger = logging.getLogger('simpleExample')
+mylogger.setLevel(logging.DEBUG)
+fh = logging.FileHandler('/var/log/aquarium.log')
+fh.setLevel(logging.DEBUG)
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+ch.setFormatter(formatter)
+fh.setFormatter(formatter)
+
+mylogger.addHandler(ch)
+mylogger.addHandler(fh)
 
 def get_uptime():
 	with open('/proc/uptime', 'r') as f:
@@ -81,10 +95,9 @@ def sendToServer(pump0,pump1,pump2,pump3,heater,chiller,co2,om,temperature,ph0,p
 	try:
 		r = requests.get(url, params=payload)
 	except:
-		print "URL Post Failed"
+		mylogger.info('URL Update Failed')
 	else:	
-		print payload
-		print r.status_code
+		mylogger.info('%s', payload)
 
 def shutdownSystem(self) :
 	command = "/sbin/halt"
@@ -101,6 +114,8 @@ class MyWidget(BoxLayout,Widget):
 			sleep(30)
 			continue
 
+		logging.info('Started')
+		
 		self.ser = serial.Serial('/dev/ttyACM0', 9600, timeout=1)
 		global Config
 		Config.read("/home/pi/aquarium.ini")
