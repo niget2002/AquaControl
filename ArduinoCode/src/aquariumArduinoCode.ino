@@ -67,6 +67,22 @@ const long interval = 1000;
 OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature sensors(&oneWire);
 
+//PH Calibration Data
+// need to modify all calibration values to work for both probes
+#include "EEPROM.h" //Standard EEPROM Library
+//I got this from shorting the nbc's cnetre pin to outer pin [simulated the perfect probe] open serial and its the mv reading that you want to put here
+#define Healthy1_mv 1.96
+#define Vs 5
+int addresCalibrationPH4[2] = { 0, 100 };  // convert to array of int
+int addresCalibrationPH7[2] = { 50, 150 }; // convert to array of int
+//************** Some values for working out the ph*****************//
+float mvReading = 0;
+float Slope[2] = { 3.5, 3.5 }; // convert to array
+float mvReading_7[2] = { 0, 0 }; // convert to array
+float mvReading_4[2] = { 0, 0 }; // convert to array
+int value = 0;
+float average = 0;
+
 // **************************************************************************************************************************
 void setup() {
   pinMode(LEDPIN, OUTPUT);
@@ -78,6 +94,10 @@ void setup() {
   digitalSetup();
   floatSetup();
   alarmSetup();
+  Read_Eprom(0); //need to convert All calibration functions to work for both probes
+  Read_Eprom(1);
+  Slope_calc(0);
+  Slope_calc(1);
 
 }
 
@@ -166,9 +186,9 @@ void analogGet(void) {
   analogsPin[0] += analogRead(MPH0) * (5.0 / 1024);
   analogsPin[1] += analogRead(MPH1) * (5.0 / 1024);
 
-  if (analogsTrigger == 100) {
-    analogs[0] = 3.5 * ((analogsPin[0] / 100)) + phOffset[0];
-    analogs[1] = 3.5 * ((analogsPin[1] / 100)) + phOffset[1];
+  if (analogsTrigger == 100) { // need to convet these so that 3.5 is replaced with PH slope
+    analogs[0] = Slope[0] * ((analogsPin[0] / 100)) + phOffset[0];
+    analogs[1] = Slope[1] * ((analogsPin[1] / 100)) + phOffset[1];
     analogsTrigger = 0;
     analogsPin[0] = 0;
     analogsPin[1] = 0;
@@ -356,27 +376,17 @@ void readPiData() {
         setChan = -1;
         break;
       case 'C':
-        lookup = incomingByte[2] - '0';
         probe = incomingByte[1];
-        val = 0.00;
 
-        int decim;
-        int tenths;
-        int hundths;
-
-        decim = incomingByte[3] - '0';
-        tenths = incomingByte[4] - '0';
-        hundths = incomingByte[5] - '0';
-        val = decim + ((tenths * 10 + hundths) * .01);
-
-        switch (probe) {
+        switch(probe){
           case '0':
-            phOffset[0] = val;
+            CalibratePH(0);
             break;
           case '1':
-            phOffset[1] = val;
-            break;
+            CalibratePH(1);
         }
+
+
         setChan = -1;
         break;
 
@@ -420,3 +430,98 @@ void timerSetup(void) {
   sei();
 
 }
+
+//PH Calibration
+//*************************** Checking what we stored in non volatile memory last time ************//
+void Read_Eprom(int phprobe) {
+
+  //************** Restart Protection Stuff ********************//
+  //the 254 bit checks that the adress has something stored to read [we dont want noise do we?]
+  value = EEPROM.read(addresCalibrationPH7[phprobe]);
+  mvReading_7[phprobe] = value * Vs / 256;
+  delay(10);
+
+  value = EEPROM.read(addresCalibrationPH4[phprobe]);
+  mvReading_4[phprobe] = value * Vs / 256;
+  delay(10);
+};
+
+//*************************Take Ten Readings And Average ****************************//
+float ReadPH(int phprobe) {
+  int i = 0;
+  unsigned long sum = 0;
+  long reading = 0;
+
+  while (i <= 20) {
+    if(phprobe) { reading = analogRead(MPH1); }
+    else { reading = analogRead(MPH0); }
+
+    sum = sum + reading;
+    delay(10);
+    i++;
+  }
+  average = sum / i;
+
+  //Converting to mV reading and then to pH
+  mvReading = average * Vs / 1024;
+  return mvReading;
+}
+
+//******************** calculating the PhMeter Parameters ***************************************//
+void Slope_calc(int phprobe) {
+  phOffset[phprobe] = Healthy1_mv - mvReading_7[phprobe];
+  Slope[phprobe] = 3 / (Healthy1_mv - mvReading_4[phprobe] - phOffset[phprobe]);
+
+}
+
+//******************************* Checks if Select button is held down and enters Calibration routine if it is ************************************//
+void CalibratePH(int phprobe) {
+
+  // Could use Serial.println to let the Arduino control the Pi at this point.
+
+  //Update Screen to place Probe in pH 7
+  Serial.println("Place probe in pH 7");
+  //Give user 30 seconds to comply
+  delay(30000);
+
+  //We are giving the probe 1 minute to settle
+  Serial.println("Settling...");
+  delay(60000);
+  Serial.println("Reading pH7");
+  mvReading_7[phprobe] = ReadPH(phprobe);
+  value = average / 4;
+  EEPROM.write(addresCalibrationPH7[phprobe], value);
+
+  Slope_calc(phprobe); // Slope will be false until after the pH4 reading has been taken
+
+  //Update Scree to rinse probe and
+  //Place probe  pH4 Calibration
+  Serial.println("Rinse and put pH 4");
+  //Give user 30 seconds to comply
+  delay(30000);
+
+
+  //We are giving the probe 1 minute to settle
+  Serial.println("Settling......");
+  delay(60000);
+  Serial.println("Reading pH4");
+  mvReading_4[phprobe] = ReadPH(phprobe);
+  value = average / 4;
+  EEPROM.write(addresCalibrationPH4[phprobe], value);
+
+  Slope_calc(phprobe); // Slope is now correct
+
+  Serial.print("pH 7 Value: ");
+  Serial.println(mvReading_7[phprobe]);
+  Serial.print("pH 4 Value: ");
+  Serial.println(mvReading_4[phprobe]);
+  Serial.print("Offset: ");
+  Serial.println(phOffset[phprobe]);
+  Serial.print("Slope: ");
+  Serial.println(Slope[phprobe]);
+
+  //Update Screen to rinse probe and
+  //Place back in tank
+
+  return;
+};

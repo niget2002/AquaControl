@@ -96,7 +96,7 @@ def sendToServer(pump0,pump1,pump2,pump3,heater,chiller,co2,om,temperature,ph0,p
 		r = requests.get(url, params=payload)
 	except:
 		mylogger.info('URL Update Failed')
-	else:	
+	else:
 		mylogger.info('%s', payload)
 
 def shutdownSystem(self) :
@@ -115,7 +115,7 @@ class MyWidget(BoxLayout,Widget):
 			continue
 
 		logging.info('Started')
-		
+
 		self.ser = serial.Serial('/dev/ttyACM0', 9600, timeout=1)
 		global Config
 		Config.read("/home/pi/aquarium.ini")
@@ -230,13 +230,7 @@ class MyWidget(BoxLayout,Widget):
 		if self.firstrun == 1 :
 			print "Setup"
 			self.ser.write('X')
-			
-			self.phoffset[0]=ConfigSectionMap("ph")["phoffset0"]
-			self.phoffset[1]=ConfigSectionMap("ph")["phoffset1"]
 
-			self.sendOffset('0',self.phoffset[0])
-			self.sendOffset('1',self.phoffset[1])
-			sleep(2)
 			for i, val in enumerate(self.pump) :
 				thisOne="pump"+str(i)
 				self.pump[i]=ConfigSectionMap("pumps")[thisOne]
@@ -274,7 +268,7 @@ class MyWidget(BoxLayout,Widget):
 		self.sendSerial('h','1','1')
            	ph1R = self.ser.readline()
 		self.sendSerial('i','1','1')
-		ph2R = self.ser.readline() 
+		ph2R = self.ser.readline()
 		self.sendSerial('t','1','1')
 		tempR = self.ser.readline()
 		tempR = tempR.strip('\n')
@@ -285,7 +279,7 @@ class MyWidget(BoxLayout,Widget):
 		ph2R = ph2R.strip('\t')
 		self.labels[1].text = ph1R
 		self.labels[2].text = ph2R
-		self.labels[3].text = str(celsiusToFer(float(tempR))) 
+		self.labels[3].text = str(celsiusToFer(float(tempR)))
 
 		self.getLatest = self.getLatest+1
 		if self.getLatest == 2 :
@@ -326,7 +320,7 @@ class MyWidget(BoxLayout,Widget):
 					self.other[i]=1
 					self.stopButton('O',i)
 					self.labels[4].text=self.labels[4].text+"[color=33ff33]"+str(i)+"[/color]"
-				else :	
+				else :
 					self.other[i]=0
 					self.startButton('O',i)
 					self.labels[4].text=self.labels[4].text+"[color=3333ff]"+str(i)+"[/color]"
@@ -340,7 +334,7 @@ class MyWidget(BoxLayout,Widget):
 				if sdat == 0:
 					self.alarms[i]=1
 					self.labels[4].text=self.labels[4].text+"[color=33ff33]"+str(i)+"[/color]"
-				else :	
+				else :
 					self.alarms[i]=0
 					self.labels[4].text=self.labels[4].text+"[color=3333ff]"+str(i)+"[/color]"
 
@@ -366,12 +360,6 @@ class MyWidget(BoxLayout,Widget):
 		self.ser.write('0')
 		self.ser.write('0')
 		self.ser.write('0')
-		self.ser.write('X')
-
-	def sendOffset(self,device,val) :
-		self.ser.write('C')
-		self.ser.write(device)
-		self.ser.write(val)
 		self.ser.write('X')
 
 	def stopButton(self, type, instance) :
@@ -400,7 +388,7 @@ class MyWidget(BoxLayout,Widget):
 			self.others[instance].text = ConfigSectionMap(thisType)[thisOne]+" Start"
 			self.others[instance].background_color=[0,255,0,1]
 
-	def buttonSwap(self, pump, type, instance) :		
+	def buttonSwap(self, pump, type, instance) :
 		if type == 'P' :
 			if self.pump[pump]==1:
 				self.startButton(type,pump)
@@ -412,7 +400,7 @@ class MyWidget(BoxLayout,Widget):
 			if pump==0:
 				self.sendSerial('A','R','0')
 				sleep(2)
-				
+
 		if type == 'O' :
 			if self.other[pump]==1:
 				self.startButton(type,pump)
@@ -456,5 +444,3 @@ class MyApp(App):
 if __name__ == '__main__':
 	is_running('fbcp')
 	MyApp().run()
-
-
