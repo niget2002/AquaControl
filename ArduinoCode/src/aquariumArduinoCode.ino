@@ -49,7 +49,7 @@ char incomingByte[serialBuffer];
 float analogs[numAnalogs];
 int analogsTrigger = 0;
 float analogsPin[] = { 0, 0 };
-float phOffset[] = { 0.00, 0.00 };
+float yIntercept[] = { 0.00, 0.00 };
 
 int floatTrigger = 0;
 int floatPin[numFloats];
@@ -183,12 +183,12 @@ void alarmCheck( void ) {
 void analogGet(void) {
 
   analogsTrigger++;
-  analogsPin[0] += analogRead(MPH0) * (5.0 / 1024);
-  analogsPin[1] += analogRead(MPH1) * (5.0 / 1024);
+  analogsPin[0] += analogRead(MPH0) * Vs / 1024;
+  analogsPin[1] += analogRead(MPH1) * Vs / 1024;
 
   if (analogsTrigger == 100) { // need to convet these so that 3.5 is replaced with PH slope
-    analogs[0] = 3.5 * ((analogsPin[0] / 100)) + phOffset[0];
-    analogs[1] = 3.5 * ((analogsPin[1] / 100)) + phOffset[1];
+    analogs[0] = Slope[0] * ((analogsPin[0] / 100)) + yIntercept[0];
+    analogs[1] = Slope[1] * ((analogsPin[1] / 100)) + yIntercept[1];
     analogsTrigger = 0;
     analogsPin[0] = 0;
     analogsPin[1] = 0;
@@ -438,16 +438,16 @@ void Read_Eprom(int phprobe) {
   //************** Restart Protection Stuff ********************//
   //the 254 bit checks that the adress has something stored to read [we dont want noise do we?]
   value = EEPROM.read(addresCalibrationPH7[phprobe]);
-  mvReading_7[phprobe] = value * Vs / 256;
+  mvReading_7[phprobe] = value;
   delay(10);
 
   value = EEPROM.read(addresCalibrationPH4[phprobe]);
-  mvReading_4[phprobe] = value * Vs / 256;
+  mvReading_4[phprobe] = value;
   delay(10);
 };
 
 //*************************Take Ten Readings And Average ****************************//
-float ReadPH(int phprobe) {
+float ReadPH(int phprobe) { // Return the average mV reading
   int i = 0;
   unsigned long sum = 0;
   long reading = 0;
@@ -461,17 +461,14 @@ float ReadPH(int phprobe) {
     i++;
   }
   average = sum / i;
-
-  //Converting to mV reading and then to pH
-  mvReading = average * Vs / 1024;
-  return mvReading;
+  return average;
 }
 
 //******************** calculating the PhMeter Parameters ***************************************//
 void Slope_calc(int phprobe) {
-  phOffset[phprobe] = Healthy1_mv - mvReading_7[phprobe];
-  Slope[phprobe] = 3 / (Healthy1_mv - mvReading_4[phprobe] - phOffset[phprobe]);
 
+  Slope[phprobe] = (7-4)/(mvReading_7[phprobe]-mvReading_4[phprobe]);
+  yIntercept[phprobe] = 7 - (Slope[phprobe] * mvReading_7[phprobe]);
 }
 
 //******************************* Checks if Select button is held down and enters Calibration routine if it is ************************************//
@@ -480,34 +477,29 @@ void CalibratePH(int phprobe) {
   // Could use Serial.println to let the Arduino control the Pi at this point.
 
   //Update Screen to place Probe in pH 7
+  Serial.print("Starting Calibration for PH Probe");
+  Serial.println(phprobe);
   Serial.println("Place probe in pH 7");
   //Give user 30 seconds to comply
-  delay(30000);
+  delay(15000);
 
   //We are giving the probe 1 minute to settle
   Serial.println("Settling...");
   delay(60000);
   Serial.println("Reading pH7");
   mvReading_7[phprobe] = ReadPH(phprobe);
-  value = average;
-  EEPROM.write(addresCalibrationPH7[phprobe], value);
-
-  Slope_calc(phprobe); // Slope will be false until after the pH4 reading has been taken
-
-  //Update Scree to rinse probe and
+  EEPROM.write(addresCalibrationPH7[phprobe], mvReading_7[phprobe]);
+  //Update Screen to rinse probe and
   //Place probe  pH4 Calibration
   Serial.println("Rinse and put pH 4");
   //Give user 30 seconds to comply
-  delay(30000);
-
-
+  delay(15000);
   //We are giving the probe 1 minute to settle
   Serial.println("Settling......");
   delay(60000);
   Serial.println("Reading pH4");
   mvReading_4[phprobe] = ReadPH(phprobe);
-  value = average;
-  EEPROM.write(addresCalibrationPH4[phprobe], value);
+  EEPROM.write(addresCalibrationPH4[phprobe], mvReading_4[phprobe]);
 
   Slope_calc(phprobe); // Slope is now correct
 
@@ -515,13 +507,10 @@ void CalibratePH(int phprobe) {
   Serial.println(mvReading_7[phprobe]);
   Serial.print("pH 4 Value: ");
   Serial.println(mvReading_4[phprobe]);
-  Serial.print("Offset: ");
-  Serial.println(phOffset[phprobe]);
+  Serial.print("yIntercept: ");
+  Serial.println(yIntercept[phprobe]);
   Serial.print("Slope: ");
   Serial.println(Slope[phprobe]);
-
-  //Update Screen to rinse probe and
-  //Place back in tank
 
   return;
 };
