@@ -187,8 +187,8 @@ void analogGet(void) {
   analogsPin[1] += analogRead(MPH1) * (5.0 / 1024);
 
   if (analogsTrigger == 100) { // need to convet these so that 3.5 is replaced with PH slope
-    analogs[0] = Slope[0] * ((analogsPin[0] / 100)) + phOffset[0];
-    analogs[1] = Slope[1] * ((analogsPin[1] / 100)) + phOffset[1];
+    analogs[0] = 3.5 * ((analogsPin[0] / 100)) + phOffset[0];
+    analogs[1] = 3.5 * ((analogsPin[1] / 100)) + phOffset[1];
     analogsTrigger = 0;
     analogsPin[0] = 0;
     analogsPin[1] = 0;
@@ -489,7 +489,7 @@ void CalibratePH(int phprobe) {
   delay(60000);
   Serial.println("Reading pH7");
   mvReading_7[phprobe] = ReadPH(phprobe);
-  value = average / 4;
+  value = average;
   EEPROM.write(addresCalibrationPH7[phprobe], value);
 
   Slope_calc(phprobe); // Slope will be false until after the pH4 reading has been taken
@@ -506,7 +506,7 @@ void CalibratePH(int phprobe) {
   delay(60000);
   Serial.println("Reading pH4");
   mvReading_4[phprobe] = ReadPH(phprobe);
-  value = average / 4;
+  value = average;
   EEPROM.write(addresCalibrationPH4[phprobe], value);
 
   Slope_calc(phprobe); // Slope is now correct
