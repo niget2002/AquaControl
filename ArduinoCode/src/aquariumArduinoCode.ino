@@ -435,14 +435,10 @@ void timerSetup(void) {
 //*************************** Checking what we stored in non volatile memory last time ************//
 void Read_Eprom(int phprobe) {
 
-  //************** Restart Protection Stuff ********************//
-  //the 254 bit checks that the adress has something stored to read [we dont want noise do we?]
-  value = EEPROM.read(addresCalibrationPH7[phprobe]);
-  mvReading_7[phprobe] = value;
+  mvReading_7[phprobe] = EEPROM.read(addresCalibrationPH7[phprobe]);
   delay(10);
 
-  value = EEPROM.read(addresCalibrationPH4[phprobe]);
-  mvReading_4[phprobe] = value;
+  mvReading_4[phprobe] = EEPROM.read(addresCalibrationPH4[phprobe]);
   delay(10);
 };
 
@@ -453,8 +449,8 @@ float ReadPH(int phprobe) { // Return the average mV reading
   long reading = 0;
 
   while (i <= 20) {
-    if(phprobe) { reading = analogRead(MPH1); }
-    else { reading = analogRead(MPH0); }
+    if(phprobe) { reading = analogRead(MPH1) * Vs / 1024; }
+    else { reading = analogRead(MPH0) * Vs / 1024; }
 
     sum = sum + reading;
     delay(10);
@@ -503,9 +499,9 @@ void CalibratePH(int phprobe) {
 
   Slope_calc(phprobe); // Slope is now correct
 
-  Serial.print("pH 7 Value: ");
+  Serial.print("pH 7 mV Value: ");
   Serial.println(mvReading_7[phprobe]);
-  Serial.print("pH 4 Value: ");
+  Serial.print("pH 4 mV Value: ");
   Serial.println(mvReading_4[phprobe]);
   Serial.print("yIntercept: ");
   Serial.println(yIntercept[phprobe]);
