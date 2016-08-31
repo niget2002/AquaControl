@@ -2,6 +2,8 @@
 #include <DallasTemperature.h>
 #include <avr/io.h>
 #include <avr/interrupt.h>
+#include "EEPROM.h"
+
 
 #define LEDPIN 13
 //Number of Items
@@ -21,6 +23,7 @@
 // Tank  Range
 #define tankTempLow 25  //in Celsius 77F
 #define tankTempHigh  28  //in Celsius 82.4F
+#define tempDiff .2  // tempDiff to turn off heater/chiller
 #define tankPhLow 7.8
 #define tankPhHigh 8.2  //not actually used
 #define caPhLow 6.5
@@ -38,13 +41,16 @@
 #define pumpCa 2
 #define pumpTopOff 3
 
+//pH Calibration
+#define Healthy1_mv 1.96
+#define Vs 5
+
 //Output Channel Mappings
 int Ch[Channels_Count_Arduino + 1];
 int myLights[] = { 0, 1 }; // Light1, Light2
 int myPumps[] = { 2, 3, 4, 5 }; // return, recirc, CA, topoff
 int myOther[] = { 6, 7, 8, 9 }; // heater, chiller, CO2, OM
 //Arrays
-//int incomingByte[serialBuffer];
 char incomingByte[serialBuffer];
 float analogs[numAnalogs];
 int analogsTrigger = 0;
@@ -68,20 +74,11 @@ OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature sensors(&oneWire);
 
 //PH Calibration Data
-// need to modify all calibration values to work for both probes
-#include "EEPROM.h" //Standard EEPROM Library
-//I got this from shorting the nbc's cnetre pin to outer pin [simulated the perfect probe] open serial and its the mv reading that you want to put here
-#define Healthy1_mv 1.96
-#define Vs 5
-int addresCalibrationPH4[2] = { 0, 100 };  // convert to array of int
-int addresCalibrationPH7[2] = { 50, 150 }; // convert to array of int
-//************** Some values for working out the ph*****************//
-float mvReading = 0;
-float Slope[2] = { 3.5, 3.5 }; // convert to array
-float mvReading_7[2] = { 0, 0 }; // convert to array
-float mvReading_4[2] = { 0, 0 }; // convert to array
-int value = 0;
-float average = 0;
+int addresCalibrationPH4[2] = { 0, 100 };
+int addresCalibrationPH7[2] = { 50, 150 };
+float Slope[2] = { 3.5, 3.5 };
+float mvReading_7[2] = { 0, 0 };
+float mvReading_4[2] = { 0, 0 };
 
 // **************************************************************************************************************************
 void setup() {
@@ -94,7 +91,8 @@ void setup() {
   digitalSetup();
   floatSetup();
   alarmSetup();
-  Read_Eprom(0); //need to convert All calibration functions to work for both probes
+  // Grab pH calibration data and calculate slope/yIntercept for probes
+  Read_Eprom(0);
   Read_Eprom(1);
   Slope_calc(0);
   Slope_calc(1);
@@ -133,7 +131,6 @@ void alarmSetup( void ) {
 }
 
 void alarmCheck( void ) {
-
   if ((floatAverage[1] == 1) && (floatAverage[0] == 0)) { // if normal sump is low, and top-off is high turn on topoff
     floatAlarm(1, myPumps[pumpTopOff]);
   } else {
@@ -171,7 +168,7 @@ void alarmCheck( void ) {
     }
   }
 
-  if (floatAverage[4] == 1) { //Protein High
+  if (floatAverage[4] == 1) { //Protein High don't do anything, just set alarm
     alarms[3] = 1;
   } else {
     alarms[3] = 0;
@@ -181,21 +178,17 @@ void alarmCheck( void ) {
 
 // ANALOGS **********************************************
 void analogGet(void) {
-
   analogsTrigger++;
   analogsPin[0] += analogRead(MPH0) * Vs / 1024;
   analogsPin[1] += analogRead(MPH1) * Vs / 1024;
 
-  if (analogsTrigger == 100) { // need to convet these so that 3.5 is replaced with PH slope
+  if (analogsTrigger == 100) {
     analogs[0] = Slope[0] * ((analogsPin[0] / 100)) + yIntercept[0];
     analogs[1] = Slope[1] * ((analogsPin[1] / 100)) + yIntercept[1];
     analogsTrigger = 0;
     analogsPin[0] = 0;
     analogsPin[1] = 0;
-
   }
-
-
 }
 
 void analogTemp(void) {
@@ -213,7 +206,7 @@ void analogCheck(void) {
   // we will do the following:
   //
   // In the event the temperature gets too low, turn on a heater
-  // wait until the temperature is 1 degree hotter than the low point to turn
+  // wait until the temperature is a tempDiff degree hotter than the low point to turn
   // the heater back off
   //
   // If the tank gets too hot, turn on the chiller. Wait until the temperature
@@ -225,7 +218,7 @@ void analogCheck(void) {
   }
   else {
     if(digitalRead(myOther[0])){
-      if( tankTempLow+.2 < analogs[2]){
+      if( tankTempLow+tempDiff < analogs[2]){
         ledMatrix_OFF(myOther[0]);
       }
     }
@@ -237,7 +230,7 @@ void analogCheck(void) {
   }
   else { // After temp is lowered proper amount OR if main Pump is turned off
     if(digitalRead(myOther[1])){
-      if( tankTempHigh-.2 > analogs[2]){
+      if( tankTempHigh-tempDiff > analogs[2]){
         ledMatrix_OFF(myOther[1]);
       }
     }
@@ -364,6 +357,7 @@ void readPiData() {
             break;
         }
         break;
+
       case 'A':
         lookup = incomingByte[2] - '0';
         switch (incomingByte[1]) {
@@ -375,9 +369,9 @@ void readPiData() {
         }
         setChan = -1;
         break;
+
       case 'C':
         probe = incomingByte[1];
-
         switch(probe){
           case '0':
             CalibratePH(0);
@@ -385,8 +379,6 @@ void readPiData() {
           case '1':
             CalibratePH(1);
         }
-
-
         setChan = -1;
         break;
 
@@ -396,7 +388,6 @@ void readPiData() {
     }
     if (setChan != -1) {
       switch (incomingByte[2]) {
-        // Relays are active LOW, so ON = OFF and vice versa
         case '0':
           ledMatrix_OFF(setChan);
           break;
@@ -431,10 +422,9 @@ void timerSetup(void) {
 
 }
 
-//PH Calibration
-//*************************** Checking what we stored in non volatile memory last time ************//
+//PH Calibration ****************************************************
+// Checking what we stored in non volatile memory last time
 void Read_Eprom(int phprobe) {
-
   mvReading_7[phprobe] = EEPROM.read(addresCalibrationPH7[phprobe]);
   delay(10);
 
@@ -442,11 +432,12 @@ void Read_Eprom(int phprobe) {
   delay(10);
 };
 
-//*************************Take Ten Readings And Average ****************************//
+//Take 20 Readings And Average
 float ReadPH(int phprobe) { // Return the average mV reading
   int i = 0;
   unsigned long sum = 0;
   long reading = 0;
+  float average = 0;
 
   while (i <= 20) {
     if(phprobe) { reading = analogRead(MPH1) * Vs / 1024; }
@@ -460,35 +451,33 @@ float ReadPH(int phprobe) { // Return the average mV reading
   return average;
 }
 
-//******************** calculating the PhMeter Parameters ***************************************//
+//calculating the PhMeter Parameters
 void Slope_calc(int phprobe) {
 
   Slope[phprobe] = (7-4)/(mvReading_7[phprobe]-mvReading_4[phprobe]);
   yIntercept[phprobe] = 7 - (Slope[phprobe] * mvReading_7[phprobe]);
 }
 
-//******************************* Checks if Select button is held down and enters Calibration routine if it is ************************************//
+//Run the Calibration
 void CalibratePH(int phprobe) {
-
-  // Could use Serial.println to let the Arduino control the Pi at this point.
-
   //Update Screen to place Probe in pH 7
-  Serial.print("Starting Calibration for PH Probe");
+  Serial.print("Starting Calibration for PH Probe: ");
   Serial.println(phprobe);
-  Serial.println("Place probe in pH 7");
-  //Give user 30 seconds to comply
-  delay(15000);
 
+  Serial.println("Place probe in pH 7");
+  //Give user 15 seconds to comply
+  delay(15000);
   //We are giving the probe 1 minute to settle
   Serial.println("Settling...");
   delay(60000);
   Serial.println("Reading pH7");
   mvReading_7[phprobe] = ReadPH(phprobe);
   EEPROM.write(addresCalibrationPH7[phprobe], mvReading_7[phprobe]);
+
   //Update Screen to rinse probe and
   //Place probe  pH4 Calibration
   Serial.println("Rinse and put pH 4");
-  //Give user 30 seconds to comply
+  //Give user 15 seconds to comply
   delay(15000);
   //We are giving the probe 1 minute to settle
   Serial.println("Settling......");
@@ -499,6 +488,7 @@ void CalibratePH(int phprobe) {
 
   Slope_calc(phprobe); // Slope is now correct
 
+  // Print out Results of Calibration
   Serial.print("pH 7 mV Value: ");
   Serial.println(mvReading_7[phprobe]);
   Serial.print("pH 4 mV Value: ");
