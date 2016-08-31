@@ -225,19 +225,19 @@ void analogCheck(void) {
   }
   else {
     if(digitalRead(myOther[0])){
-      if( tankTempLow+1 < analogs[2]){
+      if( tankTempLow+.2 < analogs[2]){
         ledMatrix_OFF(myOther[0]);
       }
     }
   }
 
-  // Turn Chiller ON/ OFF
-  if ( tankTempHigh < analogs[2] ) {
+  // Turn Chiller ON/ OFF Verify that the main Return pump is running before turning on
+  if ( (tankTempHigh < analogs[2]) && digitalRead(myPumps[pumpReturn]) ) {
     ledMatrix_ON(myOther[1]);
   }
-  else {
+  else { // After temp is lowered proper amount OR if main Pump is turned off
     if(digitalRead(myOther[1])){
-      if( tankTempHigh-1 > analogs[2]){
+      if( tankTempHigh-.2 > analogs[2]){
         ledMatrix_OFF(myOther[1]);
       }
     }
