@@ -80,8 +80,6 @@ float Slope[2] = { 3.5, 3.5 };
 float mvReading_7[2] = { 0, 0 };
 float mvReading_4[2] = { 0, 0 };
 
-float tempo7[2] = { 406,  406.1 };
-float tempo4[2] = { 356.43, 358.29 };
 // **************************************************************************************************************************
 void setup() {
   pinMode(LEDPIN, OUTPUT);
@@ -338,18 +336,21 @@ void readPiData() {
         break;
       case 'h':
         Serial.println(analogs[0]);
-	switch(incomingByte[1]) {
-		case '2':
-			Serial.println(analogRead(MPH0));
-			Serial.println(mvReading_7[0]);
-			Serial.println(mvReading_4[0]);
-			Serial.println(analogRead(MPH1));
-			Serial.println(mvReading_7[1]);
-			Serial.println(mvReading_4[1]);
-	}
+        switch(incomingByte[1]) {
+		        case '2':
+              Serial.println(analogRead(MPH0));
+              Serial.println(mvReading_7[0]);
+              Serial.println(mvReading_4[0]);
+        }
         break;
       case 'i':
         Serial.println(analogs[1]);
+        switch(incomingByte[1]) {
+            case '2':
+              Serial.println(analogRead(MPH1));
+              Serial.println(mvReading_7[1]);
+              Serial.println(mvReading_4[1]);
+        }
         break;
       case 't':
         Serial.println(analogs[2]);
@@ -436,13 +437,8 @@ void timerSetup(void) {
 //PH Calibration ****************************************************
 // Checking what we stored in non volatile memory last time
 void Read_Eprom(int phprobe) {
-  //mvReading_7[phprobe] = EEPROM.read(addresCalibrationPH7[phprobe])*4;
   EEPROM.get(addresCalibrationPH7[phprobe], mvReading_7[phprobe]);
-  delay(10);
-
-  //mvReading_4[phprobe] = EEPROM.read(addresCalibrationPH4[phprobe])*4;
   EEPROM.get(addresCalibrationPH4[phprobe], mvReading_4[phprobe]);
-  delay(10);
 };
 
 //Take 20 Readings And Average
@@ -457,7 +453,6 @@ float ReadPH(int phprobe) { // Return the average mV reading
     else { reading = analogRead(MPH0); }
 
     sum = sum + reading;
-	Serial.println(reading);
     delay(10);
     i++;
   }
@@ -467,7 +462,6 @@ float ReadPH(int phprobe) { // Return the average mV reading
 
 //calculating the PhMeter Parameters
 void Slope_calc(int phprobe) {
-
   Slope[phprobe] = (7-4)/(mvReading_7[phprobe]-mvReading_4[phprobe]);
   yIntercept[phprobe] = 7 - (Slope[phprobe] * mvReading_7[phprobe]);
 }
@@ -479,27 +473,25 @@ void CalibratePH(int phprobe) {
   Serial.println(phprobe);
 
   Serial.println("Place probe in pH 7");
-  //Give user 15 seconds to comply
-  delay(15000);
+  //Give user 30 seconds to comply
+  delay(30000);
   //We are giving the probe 1 minute to settle
   Serial.println("Settling...");
   delay(60000);
   Serial.println("Reading pH7");
-  mvReading_7[phprobe] = tempo7[phprobe]; //ReadPH(phprobe);
-  //EEPROM.write(addresCalibrationPH7[phprobe], mvReading_7[phprobe]/4);
+  mvReading_7[phprobe] = ReadPH(phprobe);
   EEPROM.put(addresCalibrationPH7[phprobe], mvReading_7[phprobe]);
 
   //Update Screen to rinse probe and
   //Place probe  pH4 Calibration
   Serial.println("Rinse and put pH 4");
-  //Give user 15 seconds to comply
-  delay(15000);
+  //Give user 30 seconds to comply
+  delay(30000);
   //We are giving the probe 1 minute to settle
   Serial.println("Settling......");
   delay(60000);
   Serial.println("Reading pH4");
-  mvReading_4[phprobe] = tempo4[phprobe]; //ReadPH(phprobe);
-  //EEPROM.write(addresCalibrationPH4[phprobe], mvReading_4[phprobe]/4);
+  mvReading_4[phprobe] = ReadPH(phprobe);
   EEPROM.put(addresCalibrationPH4[phprobe], mvReading_4[phprobe]);
 
   Slope_calc(phprobe); // Slope is now correct
