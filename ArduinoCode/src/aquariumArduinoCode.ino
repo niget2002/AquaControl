@@ -23,7 +23,7 @@
 // Tank  Range
 #define tankTempLow 25  //in Celsius 77F
 #define tankTempHigh  28  //in Celsius 82.4F
-#define tempDiff .2  // tempDiff to turn off heater/chiller
+#define tempDiff .5  // tempDiff to turn off heater/chiller
 #define tankPhLow 7.8
 #define tankPhHigh 8.2  //not actually used
 #define caPhLow 6.5
@@ -168,7 +168,7 @@ void alarmCheck( void ) {
     }
   }
 
-  if (floatAverage[4] == 1) { //Protein High don't do anything, just set alarm
+  if (floatAverage[4] == 1) { //Protein Skimmer High don't do anything, just set alarm
     alarms[3] = 1;
   } else {
     alarms[3] = 0;
@@ -277,7 +277,6 @@ void floatSetup(void) {
 }
 
 void floatCheck(void) {
-  //Check waterTopOff
   floatTrigger++;
   for (int i = 0; i < numFloats; i++) {
     floatPin[i] = floatPin[i] + digitalRead(floatStart + i);
@@ -314,10 +313,6 @@ void readPiData() {
   byte i = 0;
   char probe;
   float val;
-  //  if (Serial.available() >= serialBuffer ) {
-  //    for (i = 0; i <= serialBuffer; i++) {
-  //      incomingByte[i] = Serial.read(); // All the channels are read plus 1 for header starting with incomingByte[0]
-  //    }
 
   if (Serial.available() > 0 ) {
     Serial.readBytesUntil('X', incomingByte, 8);
@@ -424,12 +419,7 @@ void timerSetup(void) {
   // Set CS10 bit so timer runs at clock speed: (no prescaling)
   TCCR1B |= (1 << CS10); // Sets bit CS10 in TCCR1B
   TCCR1B |= (1 << CS12);
-  // This is achieved by shifting binary 1 (0b00000001)
-  // to the left by CS10 bits. This is then bitwise
-  // OR-ed into the current value of TCCR1B, which effectively set
-  // this one bit high. Similar: TCCR1B |= _BV(CS10);
 
-  // enable global interrupts:
   sei();
 
 }
