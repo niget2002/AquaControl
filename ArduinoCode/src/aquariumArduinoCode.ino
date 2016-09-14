@@ -227,7 +227,8 @@ void analogCheck(void) {
   }
 
   // Turn Chiller ON/ OFF Verify that the main Return pump is running before turning on
-  if ( (tankTempHigh < analogs[2]) && digitalRead(myPumps[pumpReturn]) ) {
+
+  if ( (tankTempHigh < analogs[2]) && !digitalRead(Ch[myPumps[0]+1]) ) {
     ledMatrix_ON(myOther[1]);
   }
   else { // After temp is lowered proper amount OR if main Pump is turned off
