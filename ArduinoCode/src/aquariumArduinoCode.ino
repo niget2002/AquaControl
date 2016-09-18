@@ -210,31 +210,30 @@ void analogCheck(void) {
   // the heater back off
   //
   // If the tank gets too hot, turn on the chiller. Wait until the temperature
-  // is 1 degree colder than the hot temperature to turn chiller back off
+  // is tempDiff colder than the hot temperature to turn chiller back off
   //
   // Turn Heater ON / OFF
   if ( tankTempLow > analogs[2] ) {
     ledMatrix_ON(myOther[0]);
   }
+  else { //turn heater off
+    if( tankTempLow+tempDiff < analogs[2]){
+      ledMatrix_OFF(myOther[0]);
+    }
+  }
+
+  // Turn Chiller ON/OFF Verify that the main Return pump is running before turning on
+
+  if (!digitalRead(Ch[myPumps[0]+1])) {
+    if ( tankTempHigh < analogs[2] ) {
+      ledMatrix_ON(myOther[1]);
+    } // After temp is lowered proper amount
+    if( tankTempHigh-tempDiff > analogs[2]) {
+      ledMatrix_OFF(myOther[1]);
+    }
+  }
   else {
-    if(digitalRead(myOther[0])){
-      if( tankTempLow+tempDiff < analogs[2]){
-        ledMatrix_OFF(myOther[0]);
-      }
-    }
-  }
-
-  // Turn Chiller ON/ OFF Verify that the main Return pump is running before turning on
-
-  if ( (tankTempHigh < analogs[2]) && !digitalRead(Ch[myPumps[0]+1]) ) {
-    ledMatrix_ON(myOther[1]);
-  }
-  else { // After temp is lowered proper amount OR if main Pump is turned off
-    if(digitalRead(myOther[1])){
-      if( tankTempHigh-tempDiff > analogs[2]){
-        ledMatrix_OFF(myOther[1]);
-      }
-    }
+    ledMatrix_OFF(myOther[1]);
   }
 
   // The Reaction to CO2 changes is so slow, there's no need to debounce using
