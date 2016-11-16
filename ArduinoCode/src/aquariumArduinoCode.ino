@@ -26,8 +26,8 @@
 #define tempDiff .5  // tempDiff to turn off heater/chiller
 #define tankPhLow 7.8
 #define tankPhHigh 8.2  //not actually used
-#define caPhLow 6.5
-#define caPhHigh 6.7  //not actually used
+#define caPhLow 7.8	// 6.5 removed CA reactor. Don't want CA relay to stay on
+#define caPhHigh 8.2	// 6.7  //not actually used
 
 //OneWire
 #define ONE_WIRE_BUS 14
