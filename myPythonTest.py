@@ -339,7 +339,7 @@ class MyWidget(BoxLayout,Widget):
 					self.labels[4].text=self.labels[4].text+"[color=3333ff]"+str(i)+"[/color]"
 
 		self.sendVals = self.sendVals+1
-		if self.sendVals == 3 :
+		if self.sendVals == 6 :
 			self.sendVals=0
 			sendToServer(str(self.pump[0]),str(self.pump[1]),str(self.pump[2]),str(self.pump[3]),str(self.other[0]),str(self.other[1]),str(self.other[2]),str(self.other[3]),self.labels[3].text,self.labels[1].text,self.labels[2].text,str(self.alarms[0]),str(self.alarms[1]),str(self.alarms[2]),str(self.alarms[3]),'0')
 
