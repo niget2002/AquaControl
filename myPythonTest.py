@@ -269,9 +269,9 @@ class MyWidget(BoxLayout,Widget):
                 # We want the SumpLight to be turned on on a reverse-daylight cycle from the primary lights
                 # We are doign this to try to stabilize pH as leaving the SumpLight on all the time is letting it get a bit high
                 if self.light[0] == self.light[1] :  # Check to see if both lights are on or off
-                        if self.light[0] == self.other[2] : # if both lights are on, then check to see if the SumpLight Matches
-                                self.other[2]=!self.light[0] # If the sump light matches the state of the Main lights, then invert it
-                                self.sendSerial('O','2',str(self.other[i])) # Chane the state of the light
+                        if self.light[0] == self.pump[2] : # if both lights are on, then check to see if the SumpLight Matches
+                                self.pump[2]= 1 - self.light[0] # If the sump light matches the state of the Main lights, then invert it
+				self.sendSerial('P','2',str(self.pump[2]))
 
                                         
 
