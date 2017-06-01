@@ -24,7 +24,7 @@
 #define tankTempLow 25  //in Celsius 77F
 #define tankTempHigh  27  //in Celsius 82.4F
 #define tempDiff .5  // tempDiff to turn off heater/chiller
-#define tankPhLow 7.8
+#define tankPhLow 9.0 // 7.8 no CA reactor, so make this stupid high to keep CO2 relay from coming on
 #define tankPhHigh 8.2  //not actually used
 #define caPhLow 7.8	// 6.5 removed CA reactor. Don't want CA relay to stay on
 #define caPhHigh 8.2	// 6.7  //not actually used
