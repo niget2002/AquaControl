@@ -22,7 +22,7 @@
 
 // Tank  Range
 #define tankTempLow 25  //in Celsius 77F
-#define tankTempHigh  28  //in Celsius 82.4F
+#define tankTempHigh  27  //in Celsius 82.4F
 #define tempDiff .5  // tempDiff to turn off heater/chiller
 #define tankPhLow 7.8
 #define tankPhHigh 8.2  //not actually used
