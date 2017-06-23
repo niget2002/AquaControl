@@ -22,8 +22,8 @@
 
 // Tank  Range
 #define tankTempLow 25  //in Celsius 77F
-#define tankTempHigh  28  //in Celsius 82.4F
-#define tankFanHigh 28 //in Celsius 80.6F This will turn the fan on before using the chiller as backup
+#define tankTempHigh  27  //in Celsius 82.4F
+#define tankFanHigh 26.5 //in Celsius 80.6F This will turn the fan on before using the chiller as backup
 #define tempDiff .5  // tempDiff to turn off heater/chiller
 #define tankPhLow 9.0 // 7.8 no CA reactor, so make this stupid high to keep CO2 relay from coming on
 #define tankPhHigh 8.2  //not actually used
