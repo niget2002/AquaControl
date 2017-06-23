@@ -22,7 +22,8 @@
 
 // Tank  Range
 #define tankTempLow 25  //in Celsius 77F
-#define tankTempHigh  27  //in Celsius 82.4F
+#define tankTempHigh  27  //in Celsius 80.6F
+#define tankFanHigh 26.5 //in Celsius 79.7F This will turn the fan on before using the chiller as backup
 #define tempDiff .5  // tempDiff to turn off heater/chiller
 #define tankPhLow 9.0 // 7.8 no CA reactor, so make this stupid high to keep CO2 relay from coming on
 #define tankPhHigh 8.2  //not actually used
@@ -49,7 +50,7 @@
 int Ch[Channels_Count_Arduino + 1];
 int myLights[] = { 0, 1 }; // Light1, Light2
 int myPumps[] = { 2, 3, 4, 5 }; // return, recirc, CA, topoff
-int myOther[] = { 6, 7, 8, 9 }; // heater, chiller, CO2, OM
+int myOther[] = { 6, 7, 8, 9 }; // heater, chiller, CO2, OM   -CO2 has cooling fan plugged in to it
 //Arrays
 char incomingByte[serialBuffer];
 float analogs[numAnalogs];
@@ -236,14 +237,24 @@ void analogCheck(void) {
     ledMatrix_OFF(myOther[1]);
   }
 
+  // We now have cooling fans on the tank. Let's turn them
+  // on and off based on tank temperature
+  if ( tankFanHigh < analogs[2] ) {
+    ledMatrix_ON(myOther[2]);
+  } // After temp is lowered proper amount
+  if( tankFanHigh-tempDiff > analogs[2]) {
+    ledMatrix_OFF(myOther[2]);
+  }
+
+  // We're commenting this out as the CO2 output is being used for the cooling fan above
   // The Reaction to CO2 changes is so slow, there's no need to debounce using
   // the above algorithm like for temperature.
   // Turn CO2 ON/ OFF
-  if ( tankPhLow > analogs[0] || caPhLow > analogs[1]) {
-    ledMatrix_OFF(myOther[2]);
-  } else {
-    ledMatrix_ON(myOther[2]);
-  }
+  // if ( tankPhLow > analogs[0] || caPhLow > analogs[1]) {
+  //   ledMatrix_OFF(myOther[2]);
+  // } else {
+  //   ledMatrix_ON(myOther[2]);
+  // }
 
 }
 

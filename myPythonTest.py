@@ -28,8 +28,8 @@ from kivy.uix.boxlayout import BoxLayout
 
 Config=ConfigParser.ConfigParser()
 # values are TOTAL - 1 for 0
-numLights=2
-numPumps=4
+numLights=2 # L1, L2
+numPumps=4  # Return, Recirc, CaReactor, Top-off... SumpLight is plugged into CaReactor
 numOther=4
 numAlarms=4
 mylogger = logging.getLogger('simpleExample')
@@ -264,6 +264,17 @@ class MyWidget(BoxLayout,Widget):
         		if oldLight[i] != self.light[i] :
             			self.sendSerial('L',str(i),str(self.light[i]))
 				sleep(2)
+
+                # This next section of code is used to control the SumpLight which is currently attatched to CaReactor output
+                # We want the SumpLight to be turned on on a reverse-daylight cycle from the primary lights
+                # We are doign this to try to stabilize pH as leaving the SumpLight on all the time is letting it get a bit high
+                if self.light[0] == self.light[1] :  # Check to see if both lights are on or off
+                        if self.light[0] == self.pump[2] : # if both lights are on, then check to see if the SumpLight Matches
+                                self.pump[2]= 1 - self.light[0] # If the sump light matches the state of the Main lights, then invert it
+				self.sendSerial('P','2',str(self.pump[2]))
+
+                                        
+
 
 		self.sendSerial('h','1','1')
            	ph1R = self.ser.readline()
